@@ -1,0 +1,3 @@
+<launch>
+<node pkg="tf2_ros" type="static_transform_publisher" name="link1_broadcaster" args="0.732017 0 0.389761 0.0483982 0.8489696 -0.5243058 -0.0448507 base /baxter/abs_frame_desired" />
+</launch>

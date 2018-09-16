@@ -1,0 +1,12 @@
+right hand open joint states
+
+name: ['servo2', 'servo2m', 'servo4', 'servo4m', 'servo6', 'servo6m', 'servo8', 'servo8m', 'servo3', 'servo3m', 'servo5', 'servo5m', 'servo7', 'servo7m', 'servo9', 'servo9m', 'tip1', 'tip1b', 'tip2', 'tip2b', 'tip3', 'tip3b', 'tip4', 'tip4b', 'servo0', 'servo1', 'servo1m']
+position: [0.17, 0.17, 0.17980000000000002, 0.17980000000000002, 0.17, 0.17, 0.17, 0.17, 0.4490200000000001, 0.4490200000000001, 0.17, 0.17, 0.17, 0.17, 0.17, 0.17, 0.3800198, 0.3800198, 0.24330000000000002, 0.24330000000000002, 0.24330000000000002, 0.24330000000000002, 0.24330000000000002, 0.24330000000000002, 1.53666, 0.34, 0.34]
+
+
+right hand grasped joint states
+name: ['servo2', 'servo2m', 'servo4', 'servo4m', 'servo6', 'servo6m', 'servo8', 'servo8m', 'servo3', 'servo3m', 'servo5', 'servo5m', 'servo7', 'servo7m', 'servo9', 'servo9m', 'tip1', 'tip1b', 'tip2', 'tip2b', 'tip3', 'tip3b', 'tip4', 'tip4b', 'servo0', 'servo1', 'servo1m']
+position: [0.17, 0.17, 0.17, 0.17, 1.57, 1.57, 1.57, 1.57, 0.17, 0.17, 0.17, 0.17, 1.3432, 1.3432, 1.57, 1.57, 0.24330000000000002, 0.24330000000000002, 0.24330000000000002, 0.24330000000000002, 0.818168, 0.818168, 0.9293, 0.9293, 1.53666, 0.764792, 0.764792]
+
+
+

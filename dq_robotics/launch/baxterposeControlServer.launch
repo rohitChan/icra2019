@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<launch>
+	<rosparam command="load" file="$(find dq_robotics)/config/baxter_param_mod.yaml" />
+	<rosparam command="load" file="$(find dq_robotics)/config/velocity_ffController_param.yaml" />
+	<node pkg="dq_robotics" type="baxterPoseControl_server" name="baxterPoseControl_server" output="screen" /> 
+	<node pkg="rqt_reconfigure" type="rqt_reconfigure" name="rqt_reconfigure" output="screen" /> 
+	<node pkg="dq_robotics" type="baxter_setJointToZero.py" name="baxter_init_pose" output="screen" /> 
+	<!-- <node pkg="dq_robotics" type="disable_gravity_baxSDK" name="disable_gravity_baxSDK" output="screen" />  -->
+	<node type="rviz" name="rviz" pkg="rviz" args="-d $(find dq_robotics)/rviz/acc_cntrl.rviz" />
+</launch>

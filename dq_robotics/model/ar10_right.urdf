@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<robot name="ar10_right">
+  <link name="base_link">
+    <visual>
+      <geometry>
+        <cylinder length="0.4323" radius="0.35"/>
+      </geometry>
+      <!-- <origin xyz =" 0 0 ${0.4323/2} " rpy= "0 0 0"/> -->
+    </visual>
+  </link>
+ <!--  <link name="palm_bottom">
+    <visual>
+      <geometry>
+        <box size="${2*0.565} ${2*0.14} 0.8"/>
+      </geometry>
+    </visual>
+  </link>
+
+  <joint name="base_link_to_palm_bottom" type="fixed">
+    <parent link="base_link"/>
+    <child link="palm_bottom"/>
+  </joint> -->
+
+</robot>

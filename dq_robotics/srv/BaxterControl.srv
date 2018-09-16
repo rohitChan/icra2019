@@ -1,0 +1,24 @@
+float64[] desiredAbsPose  # it can be right/left/right_refRight desire pose
+float64[] desiredAbsPose_vision  # it can be right/left/right_refRight desire pose using VISION
+float64[] desiredRelPose # this can be relative desire pose
+float64[] desiredRelPose_vision # this can be relative desire pose using VISION
+float64[] desiredAbsVelocity  # it can be right/left/right_refRight desired velocity
+float64[] desiredRelVelocity # this can be desired relative velcity
+int32 controlMode # switch_case[1: right, 2: left, 3: rel, 4: right+rel, 5. rightOrientation+rel]
+bool useVisualPose_single # Getting image based pose, 1: use, 0:use kinematics
+bool useVisualPose_relative # Getting image based pose, 1: use, 0:use kinematics
+bool velocity_control # True for velocity control and False for position control
+bool request_manipulator_infoService # request info about the manipulator, true if only that is needed
+int32 infoService_mode #[1: right pose, 2: left pose, 3: rel pose, 4: right+rel pose, 5. rightOrientation+rel pose, 6. reset time] 
+float64[] starting_abs_pose
+bool virtualSticks
+bool newTask
+bool tracking
+---
+bool result # something wrong
+float64[] currentAbsPose # will return errorDQ
+float64[] currentRelPose # will return errorDQ
+float64 normError # will return norm of error
+float64 timeNow 
+float64 timeLast
+time timeStamp

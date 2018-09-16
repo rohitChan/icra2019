@@ -1,0 +1,6 @@
+float64[] grasp_pose_thumb # pose for thumb  
+float64[] grasp_pose_index # pose for index  
+float64 pre_grasp_distance # how far the last link on baxter should be from the object
+float64[] pre_grasp_axis # the axis is relative to the object, default is wrt robot base frame and along negative z axis
+---
+float64 normError

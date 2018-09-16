@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<launch>
+<!-- Usage: static_transform_publisher x y z yaw pitch roll frame_id child_frame_id  period (milliseconds) -->
+<!-- Usage: static_transform_publisher x y z x_quat y_quat z_quat w_quat frame_id child_frame_id  period (milliseconds) -->
+
+<!-- Test 1 -->
+<!--   <node pkg="tf"
+        type="static_transform_publisher"
+        name="link1_broadcaster"
+        args=".5 .6 .5 0 0 0.7071 0.7071 world dq_curr 100" /> -->
+<!-- Test 2 -->
+  <node pkg="tf"
+        type="static_transform_publisher"
+        name="link1_broadcaster"
+        args=".5 .6 0 0 0 0 1 world dq_curr 100" />        
+  <node pkg="tf" 
+        type="static_transform_publisher" 
+        name="link2_broadcaster" 
+        args="0 .8 0 -0.5000 -0.5000 0.5000 0.5000 world dq_des 100" />
+ <!-- going from frame current to desired -->
+<!--  <node pkg="tf" 
+        type="static_transform_publisher" 
+        name="link3_broadcaster" 
+        args="0.37 .73 0.105 -0.1975 -0.1975 0.1975 0.9397 world dq_2 100" />                
+  <node pkg="tf" 
+        type="static_transform_publisher" 
+        name="link4_broadcaster" 
+        args="0.18 .815 0.09952 -0.3711 -0.3711 0.3711 0.7660 world dq_3 100" />         -->
+
+<!-- going from frame desired to current -->
+ <node pkg="tf" 
+        type="static_transform_publisher" 
+        name="link3_broadcaster" 
+        args="-0.135 .0.624 -0.14 -0.3711 -0.3711 0.3711 0.766 world dq_2 100" />                
+  <node pkg="tf" 
+        type="static_transform_publisher" 
+        name="link4_broadcaster" 
+        args="0.1288 0.4997 -0.371 -0.1975 -0.1975 0.1975 0.9397 world dq_3 100" />        
+  <node pkg="rviz" 
+        type="rviz" 
+        name="rviz"/>
+</launch>

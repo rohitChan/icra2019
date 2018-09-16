@@ -1,0 +1,723 @@
+#include <dq_robotics/DQoperations.h>
+using namespace Eigen;
+
+DQoperations::DQoperations(){}
+DQoperations::~DQoperations(){}
+
+Matrix4d DQoperations::htmFromGeometryMsgPose(geometry_msgs::Pose pose)
+{
+	Matrix4d htm;
+  Eigen::Quaterniond q;
+  q.x()=-pose.orientation.x;
+  q.y()=-pose.orientation.y;
+  q.z()=-pose.orientation.z;
+  q.w()=-pose.orientation.w;
+  Eigen::Matrix3d rot = q.normalized().toRotationMatrix();
+
+  Eigen::RowVector4d translation;
+  translation << pose.position.x, pose.position.y, pose.position.z, 1;
+
+  htm.setIdentity();
+  htm.block<3,3>(0,0) = rot;
+  htm.rightCols<1>() =translation;
+  return htm;
+}
+
+Matrix<double,8,1>  DQoperations::dqFromGeometryMsgPose(geometry_msgs::Pose pose)
+{
+	Matrix<double,8,1> dq;
+	Matrix4d htm = DQoperations::htmFromGeometryMsgPose(pose);
+	dq = DQoperations::htm2DQ(htm);
+	return dq;
+}
+
+geometry_msgs::Pose DQoperations::DQ2geometry_msgsPose(Matrix<double,8,1> pose_now)
+{
+	geometry_msgs::Pose pose;
+	pose.orientation.w=pose_now(0);	
+	pose.orientation.x=pose_now(1);	
+	pose.orientation.y=pose_now(2);	
+	pose.orientation.z=pose_now(3);
+
+	Matrix4d pose_now_htm= DQoperations::dq2HTM(pose_now);
+	pose.position.x=pose_now_htm(0,3);	
+	pose.position.y=pose_now_htm(1,3);	
+	pose.position.z=pose_now_htm(2,3);
+	return pose;	
+}
+
+RowVectorXd DQoperations::Matrix8d2RowVectorXd(Matrix<double,8,1> matrix8d)
+{
+	RowVectorXd rowVector(8);
+	rowVector << matrix8d(0), matrix8d(1), matrix8d(2), matrix8d(3), matrix8d(4), matrix8d(5), matrix8d(6), matrix8d(7);
+	return rowVector;
+}
+
+Matrix<double,8,1> DQoperations::sclerp(Matrix<double,8,1> pose_now, Matrix<double,8,1> &pose_intermediate, Matrix<double,8,1> pose_desired, double tau)
+{
+	Matrix<double,8,1> pose_error=DQoperations::mulDQ(DQoperations::classicConjDQ(pose_now), pose_desired);
+	double theta_e, d_e;
+	RowVector3d l_e, m_e;
+	DQoperations::dq2screw(pose_error, theta_e, d_e, l_e, m_e);
+	RowVector3d realPart_velocity= 0.5*theta_e*l_e, dualPart_velocity=0.5*theta_e*m_e+0.5*d_e*l_e;
+	Matrix<double,8,1> velocity;
+	velocity << 0, realPart_velocity(0), realPart_velocity(1), realPart_velocity(2), 0, dualPart_velocity(0), dualPart_velocity(1), dualPart_velocity(2);  
+	// velocity=mulDQ(pose_now, mulDQ(velocity, pose_error));
+	// std::cout << "velocity: " << velocity << std::endl;
+	pose_intermediate =DQoperations::screw2DQ(tau*theta_e, l_e, tau*d_e, m_e);
+	pose_intermediate=DQoperations::mulDQ(pose_now, pose_intermediate);
+	// DQoperations::dq2screw(velocity, theta_e, d_e, l_e, m_e);
+	// realPart_velocity= theta_e*l_e;
+	// dualPart_velocity=theta_e*m_e+d_e*l_e;
+	
+
+	return velocity;	
+}
+
+Matrix<double,8,1>  DQoperations::preGraspFromGraspPose(Matrix<double,8,1> grasp_location, double distance, RowVector3d approach_direction)
+{
+	Matrix<double,8,1>  dq_result;
+
+	double theta= 0;
+	RowVector3d axis=-approach_direction;
+	double d= distance;
+	RowVector3d moment =RowVector3d::Zero();
+	dq_result= DQoperations::screw2DQ(theta, axis, d, moment);
+	dq_result= mulDQ(grasp_location, dq_result);
+	return dq_result;
+}
+
+Matrix<double,8,1>  DQoperations::transformLine(Matrix<double,8,1> line, Matrix<double,8,1> transform)
+{
+	// line=mulDQ(transform, mulDQ(line, classicConjDQ(transform)));
+	// std::cout << "lineVector: "  << line.transpose() << std::endl;		
+	// std::cout << "transform: " << transform.transpose() << std::endl;		
+	line=mulDQ(transform, mulDQ(line, classicConjDQ(transform)));
+	// std::cout << "lineVector_transformed: "  << line.transpose() << std::endl;			
+	return line;
+}
+
+RowVectorXd  DQoperations::transformLineVector(RowVectorXd lineVector, Matrix<double,8,1> transform)
+{
+	Matrix<double,8,1> line_dq;
+	line_dq << 0, lineVector(0), lineVector(1), lineVector(2), 0, 0, 0, 0;
+	line_dq = mulDQ(transform, mulDQ(line_dq, classicConjDQ(transform)));
+	lineVector.resize(3);
+	lineVector << line_dq(1), line_dq(2), line_dq(3);
+	return lineVector;
+}
+
+RowVectorXd  DQoperations::transformLine6dVector(RowVectorXd lineVector, Matrix<double,8,1> transform)
+{
+	// std::cout << "lineVector: "  << lineVector << std::endl;		
+	// std::cout << "transform: " << transform.transpose() << std::endl;		
+	Matrix<double,8,1> line_dq;
+	line_dq << 0, lineVector(0), lineVector(1), lineVector(2), 0, lineVector(3), lineVector(4), lineVector(5);
+	line_dq = mulDQ(transform, mulDQ(line_dq, classicConjDQ(transform)));
+	lineVector.resize(6);
+	lineVector << line_dq(1), line_dq(2), line_dq(3), line_dq(5), line_dq(6), line_dq(7);
+	// std::cout << "lineVector_after: "  << lineVector << std::endl;			
+	return lineVector;
+}
+
+RowVector3d  DQoperations::transformPoint(RowVector3d point, Matrix<double,8,1> transform)
+{
+	Matrix<double,8,1> point_dq;
+	point_dq << 1, 0, 0, 0, 0, point(0), point(1), point(2);	
+	point_dq=DQoperations::mulDQ(DQoperations::mulDQ(transform, point_dq), DQoperations::combinedConjDQ(transform));
+	point.resize(3);
+	point << point_dq(5), point_dq(6), point_dq(7);
+	return point;
+}
+
+Matrix<double,8,1>  DQoperations::htm2DQ(Matrix4d htm_original)
+{
+	// std::cout << "htm_original:" << std::endl;	
+	// std::cout << htm_original << std::endl;	
+	Matrix<double,8,1> dq;
+	Matrix3d htm_, htm_eye;
+	htm_=htm_original.block<3,3>(0,0);
+	// RowVector3d trans=RowVector3d(3, 4, 5);
+	htm_eye =htm_-MatrixXd::Identity(3,3);
+    EigenSolver<MatrixXd> eigensolver(htm_eye);
+
+    std::vector<double> eigenVal, eigenVec;
+    eigenVal.clear();
+    eigenVal.resize(htm_.rows());
+    eigenVec.clear();
+
+    int index=0;
+    for(int i=0;i<htm_.rows(); i++)
+    {
+      eigenVal[i]=abs(eigensolver.eigenvalues()[i]);
+      if(eigenVal[i]<eigenVal[index])
+      	index=i;
+    }
+
+    if (eigenVal[index]>0.001)
+      std::cerr << "Rotation Matrix seems dubious\n";
+	RowVector3d vecAxis=eigensolver.eigenvectors().col(index).real();
+	if (abs(vecAxis.norm()-1)>0.0001)
+		std::cerr << "Non-unit rotation axis"<< std::endl;
+
+	double twoCosTheta=htm_.trace()-1;
+	// std::cout << "twoCosTheta:" << twoCosTheta <<std::endl; 
+	RowVector3d twoSinThetaV= RowVector3d ((htm_(2,1)-htm_(1,2)), (htm_(0,2)-htm_(2,0)), (htm_(1,0)-htm_(0,1)));
+	double twoSinTheta=vecAxis*twoSinThetaV.transpose();
+	// std::cout << "twoSinTheta:" << twoSinTheta <<std::endl;
+	double theta= std::atan2(twoSinTheta,twoCosTheta);
+	// std::cout << "theta:" << theta <<std::endl;
+	RowVector4d rot_q=RowVector4d(cos(theta/2), sin(theta/2)*vecAxis(0), sin(theta/2)*vecAxis(1), sin(theta/2)*vecAxis(2));
+	// std::cout << "rot_q:" << rot_q <<std::endl;
+	RowVector4d trans_q=RowVector4d(0., htm_original(0,3), htm_original(1,3), htm_original(2,3));
+
+	RowVector4d prodRotTrans=0.5*DQoperations::multQuat(trans_q, rot_q);
+
+	dq<< rot_q(0),
+		rot_q(1),
+		rot_q(2),
+		rot_q(3),
+		prodRotTrans(0),
+		prodRotTrans(1),
+		prodRotTrans(2),
+		prodRotTrans(3);
+
+	return dq;
+}
+
+RowVector4d DQoperations::multQuat(RowVector4d p, RowVector4d q)
+{
+	double s1=	p(0);
+	double s2=	q(0);
+	RowVector3d v1= RowVector3d(p(1), p(2), p(3));
+	RowVector3d v2= RowVector3d(q(1), q(2), q(3));
+	double term1= (s1*s2-v1.dot(v2));
+	RowVector3d term2=s1*v2+s2*v1 +v1.cross(v2);
+	RowVector4d result=RowVector4d(term1, term2(0), term2(1), term2(2));
+	return result;
+}
+
+RowVector4d DQoperations::conjQuat(RowVector4d p)
+{
+	RowVector4d result;
+	result=RowVector4d(p(0),-p(1),-p(2),-p(3));
+	return result;
+}
+
+
+Matrix4d DQoperations::dq2HTM(Matrix<double,8,1> dq)
+{
+    RowVector4d qrr, qtt;
+	RowVector3d u;
+
+    qrr=RowVector4d(dq(0),dq(1),dq(2),dq(3));
+    qtt=RowVector4d(dq(4),dq(5),dq(6),dq(7));
+    qtt=2*DQoperations::multQuat(qtt, DQoperations::conjQuat(qrr));
+
+    double theta=2*acos(qrr(0));
+    // std::cout << "theta_dq2HTM: " << theta << std::endl;  
+    if (theta!=0)
+    	u=RowVector3d(qrr(1),qrr(2),qrr(3))/sin(theta/2);
+    else
+    	u=RowVector3d(0, 0, 1);
+
+    Matrix3d skw, rot;
+    skw<< 0, -u(2), u(1),
+    		u(2), 0., -u(0),
+    		-u(1), u(0), 0;
+
+    rot=MatrixXd::Identity(3,3)+sin(theta)*skw+skw*skw*(1-cos(theta));
+    Matrix4d htm_;
+    htm_<< rot(0,0), rot(0,1), rot(0,2), qtt(1),
+    		rot(1,0), rot(1,1), rot(1,2), qtt(2),
+    		rot(2,0), rot(2,1), rot(2,2), qtt(3),
+    		0, 0, 0, 1;	
+	return htm_;
+}
+
+Matrix<double,8,1> DQoperations::classicConjDQ(Matrix<double,8,1> dq) // p*+ iq*
+{
+	Matrix<double,8,1> dq_result;
+	dq_result << dq(0), -dq(1), -dq(2), -dq(3), dq(4), -dq(5), -dq(6), -dq(7);
+	return dq_result;
+}
+Matrix<double,8,1> DQoperations::dualConjDQ(Matrix<double,8,1> dq) // p-iq
+{
+	Matrix<double,8,1> dq_result;	
+	dq_result<<dq(0), dq(1), dq(2), dq(3), -dq(4), -dq(5), -dq(6), -dq(7);
+	return dq_result;
+}
+
+Matrix<double,8,1> DQoperations::combinedConjDQ(Matrix<double,8,1> dq) //p* - iq* same as conjdualq in matlab
+{
+	Matrix<double,8,1> dq_result;	
+	dq_result<<dq(0), -dq(1), -dq(2), -dq(3), -dq(4), dq(5), dq(6), dq(7);	
+	return dq_result;
+}
+
+Matrix<double,8,1> DQoperations::inverseDQ(Matrix<double,8,1> dq) 
+{
+	RowVector4d rot; 
+	RowVector4d trans;
+	dq2rotAndTransQuat(dq, rot, trans);
+	dq << conjQuat(rot), 0.5*multQuat(conjQuat(rot), -trans);
+	return dq;
+}
+
+
+Matrix<double,8,1> DQoperations::screw2DQ(double theta, RowVector3d axis, double d, RowVector3d moment)
+{
+
+	RowVector4d q_rot, q_tr;
+	q_rot << cos(theta/2),
+			sin(theta/2)*axis;
+
+	q_tr << -(d/2)*sin(theta/2),
+			(d/2)*cos(theta/2)*axis+sin(theta/2)*moment;
+
+	Matrix<double, 8,1> dq;
+	dq << q_rot(0), q_rot(1), q_rot(2), q_rot(3), q_tr(0), q_tr(1), q_tr(2), q_tr(3); 
+
+	return dq;
+}
+
+MatrixXd DQoperations::transformJacobian(MatrixXd jacobian_8d, Matrix<double,8,1> dq)
+{
+	std::cout << "jacobian_8d_beforeTransform: " <<  std::endl;
+	std::cout << jacobian_8d <<  std::endl;
+	MatrixXd jacobian, jacobian_6d;
+	jacobian_6d = MatrixXd::Zero(6, jacobian_8d.cols());
+	jacobian = jacobian_6d;
+	// relJacobian_8d = MatrixXd::Zero(8, (jacobian_ref.cols() + jacobian_tool.cols()));
+	jacobian_6d.block(0, 0, 3, jacobian_8d.cols()) = jacobian_8d.block(5, 0,  3, jacobian_8d.cols());
+	jacobian_6d.block(3, 0, 3, jacobian_8d.cols()) = jacobian_8d.block(1, 0,  3, jacobian_8d.cols());
+	// RowVector3d p_rel;
+
+	// Matrix4d pose_ref =  DQoperations::dq2HTM(p_ee_ref);
+	// Matrix4d pose_tool =  DQoperations::dq2HTM(p_ee_tool);
+	// p_rel << (pose_ref(0,3) - pose_tool(0,3)), (pose_ref(1,3) - pose_tool(1,3)), (pose_ref(2,3) - pose_tool(2,3));
+	// ROS_INFO("here 24");
+	
+	// std::cout << "relJacobian: " <<  std::endl;
+	for (int i = 0; i < (jacobian_8d.cols()); i++)
+	{
+		// std::cout << "before transformation: " << DQoperations::transformLine6dVector(jacobian_6d.col(i), DQoperations::classicConjDQ(p_ee_ref)) << std::endl;
+		jacobian.col(i) << DQoperations::transformLine6dVector(jacobian_6d.col(i).transpose(), dq).transpose();
+		// std::cout << relJacobian.col(i).transpose()  << std::endl;		
+		// relJacobian.col(i + jacobian_ref.cols()) = DQoperations::transformLine6dVector(jacobian_6d.col(i), DQoperations::classicConjDQ(p_ee_ref));
+	}
+	// ROS_INFO("here 25");
+	jacobian_6d.block(0, 0, 3, jacobian.cols()) = jacobian.block(3, 0,  3, jacobian.cols());
+	jacobian_6d.block(3, 0, 3, jacobian.cols()) = jacobian.block(0, 0,  3, jacobian.cols());	
+
+	jacobian_8d = MatrixXd::Zero(8, jacobian.cols());
+	jacobian_8d.block(1, 0, 3, jacobian_6d.cols()) = jacobian_6d.block(0, 0, 3, jacobian_6d.cols());
+	jacobian_8d.block(5, 0, 3, jacobian_6d.cols()) = jacobian_6d.block(3, 0, 3, jacobian_6d.cols()) ; 
+	std::cout << "jacobian_8d_afterTransform: " <<  std::endl;
+	std::cout << jacobian_8d <<  std::endl;
+	return jacobian_8d;
+}
+
+Matrix<double,8,1> DQoperations::rotTrans2dq(RowVector4d rot, RowVector4d trans)
+{
+	Matrix<double,8,1> dq;
+	RowVector4d trans_quat = DQoperations::multQuat(rot, trans)/2;
+	dq << rot(0), rot(1), rot(2), rot(3), trans_quat(0), trans_quat(1), trans_quat(2), trans_quat(3);
+	return dq;
+}
+
+void DQoperations::dq2rotAndTransQuat(Matrix<double,8,1> dq, RowVector4d &rot, RowVector4d &trans)
+{
+	// translation then rotation.
+	rot << dq(0), dq(1), dq(2), dq(3);
+	trans << dq(4), dq(5), dq(6), dq(7);
+	trans= 2*DQoperations::multQuat(conjQuat(rot), trans);
+}
+
+Matrix<double,8,1> DQoperations::twist2dq(Matrix<double,8,1> dq_twist) 
+{
+	Matrix<double,8,1> dq;
+	double theta_e, d_e;
+	RowVector3d l_e, m_e, w, v;
+
+	w << dq_twist(1,0), dq_twist(2,0), dq_twist(3,0);
+	std::cout << "w: " << w; 
+	v << dq_twist(5,0), dq_twist(6,0), dq_twist(7,0);
+	std::cout << "v: " << v;
+	theta_e = w.norm();
+	if (theta_e != 0)
+	{
+		l_e = w/theta_e;
+		d_e = (l_e.transpose()*v)(0,0);
+		m_e = (v - d_e*l_e)/theta_e;
+		// dq = DQoperations::screw2DQ;
+		dq = DQoperations::screw2DQ(theta_e, l_e, d_e, m_e);
+	} 
+	else
+	{
+		dq << 1, 0,  0,  0,  0,  0,  0,  0;
+	}
+	std::cout << "dq_fromTwist: " << dq.transpose();
+	return dq;
+}
+
+Matrix<double,8,1> DQoperations::dq2twist(Matrix<double,8,1> dq) 
+{
+	Matrix<double,8,1> dq_twist;
+	double theta_e, d_e; 
+	RowVector3d l_e, m_e, v, w;
+	DQoperations::dq2screw(dq, theta_e, d_e, l_e, m_e) ;
+	w = l_e*theta_e;
+	std::cout << "w_dq2twist: " << w << std::endl;
+	v =  l_e*d_e + m_e*theta_e;
+	std::cout << "v_dq2twist: " << v << std::endl;	
+	DQoperations::dq2screw(dq, theta_e, d_e, l_e, m_e);
+	dq_twist << 0, w.transpose(), 0 , v.transpose(); 
+	return dq_twist;
+}
+
+void DQoperations::dq2screw(Matrix<double,8,1> dq, double &theta_e, double &d_e, RowVector3d &l_e, RowVector3d &m_e) 
+{
+	double eps_theta=0.05; /*0.1 degrees*/ 
+	double sr, sd, theta;
+	RowVector3d vr, vd;
+	// std::cout << "dq(dq2screw): " << dq.transpose() << std::endl;
+	// std::cout << "dq(0,0): " << dq(0,0) << std::endl;
+	if(dq(0,0)<0)
+	{
+		dq=-dq;
+		// std::cout << "dq(dq2screw): " << dq.transpose() << std::endl;
+	}	
+
+	sr=dq(0);
+
+	if(sr > 1.0)
+		sr =1.0 ;
+	else if(sr < -1.0)
+		sr=-1;
+
+	vr << dq(1), dq(2), dq(3);
+	sd=dq(4);
+	vd << dq(5), dq(6), dq(7);
+	theta_e=2*acos(sr);
+	// std::cout << "sr: " << sr << std::endl;
+	double absTheta=fabs(theta_e);
+	// std::cout << "abs(theta_e):  " << absTheta << std::endl;
+	if (absTheta > eps_theta && absTheta < (2*M_PI -eps_theta))
+	{
+		// std::cout << "check:: theta_e:  " << absTheta << "eps_theta: "  << eps_theta << "(2*M_PI -eps_theta): "  << (2*M_PI -eps_theta) << std::endl;
+		// std::cout << "definitly here, vr: " << std::endl;
+		// std::cout << "vr: " <<  vr << std::endl;
+		// std::cout << "vr.norm " <<  vr.norm() << std::endl;
+		// std::cout << "vr/vr.norm " <<  vr/vr.norm() << std::endl;
+		l_e=vr/vr.norm();
+		d_e=-sd*(2/(vr.norm()));
+		m_e=(vd-sr*0.5*d_e*l_e)/vr.norm();
+	}	
+	else
+	{
+		// std::cout << "why do you have to come here:  " << std::endl;
+		// std::cout << "check:: theta_e:  " << absTheta << "eps_theta: "  << eps_theta << "(2*M_PI -eps_theta): "  << (2*M_PI -eps_theta) << std::endl;
+		RowVector4d qrr, qdd, tt;
+		RowVector3d t;
+		qrr << dq(0), dq(1), dq(2), dq(3);	
+		qdd << dq(4), dq(5), dq(6), dq(7);
+		tt=2*DQoperations::multQuat(qdd, DQoperations::conjQuat(qrr));
+		t << tt(1), tt(2), tt(3);  
+		d_e=t.norm();
+		if (d_e == 0)
+		{
+			l_e << 0,0,1;
+		}
+		else l_e=t/d_e;
+		m_e << 0,0,0;			
+	}
+	// std::cout << "dq:" << dq << std::endl;
+	// std::cout << "theta:" << theta_e << std::endl;
+	// std::cout << "l_e:" << l_e << std::endl;
+	// std::cout << "d_e:" << d_e << std::endl;
+	// std::cout << "m_e:" << m_e << std::endl;
+}
+
+Matrix<double,8,1> DQoperations::mulDQ(Matrix<double,8,1> p, Matrix<double,8,1> q)
+{
+	RowVector4d p1, p2, q1, q2;
+	p1<< p(0), p(1), p(2), p(3);	
+	p2<< p(4), p(5), p(6), p(7);	
+	q1<< q(0), q(1), q(2), q(3);	
+	q2<< q(4), q(5), q(6), q(7);	
+	
+	Matrix<double,8,1> result;
+	result << DQoperations::multQuat(p1, q1).transpose(), (DQoperations::multQuat(p1, q2)+DQoperations::multQuat(p2, q1)).transpose();
+	// std::cout << "result:" << std::endl;
+	// std::cout << result << std::endl;
+
+	return result;
+}
+
+
+std::vector<Matrix<double,8,1> > DQoperations::fkm_dual(RowVectorXd q /*q is defined as [q1 d1 q2 d2 ...]*/, std::vector<RowVector3d> u, std::vector<RowVector3d> p)
+{
+	int joint_size=q.size()/2;
+	std::vector<Matrix<double,8,1> > screwDispalcementArray;
+	screwDispalcementArray.clear();
+	screwDispalcementArray.resize(joint_size);
+
+	if (u.size()!=joint_size || p.size()!=joint_size)
+	{
+		std::cerr << "Size mismatch error in the input for forward kinematic computation." << std::endl;
+		std::cerr << "u_size"<< u.size()<< std::endl;
+		std::cerr << "p_size"<< p.size()<< std::endl;
+		std::cerr << "joint_size"<< joint_size<< std::endl;
+		return screwDispalcementArray;
+	}
+
+	for (int i=0;i<joint_size; i++)
+	{
+		double theta_i=q[2*i];
+		RowVector3d u_i=u[i];
+		RowVector3d p_i=p[i];
+		double d_i=q[2*i+1];
+		Matrix<double,8,1> screwDispalcementArray_i;
+		screwDispalcementArray_i= DQoperations::screw2DQ(theta_i, u_i, d_i, p_i.cross(u_i));
+		if (i==0)
+			screwDispalcementArray[i]=screwDispalcementArray_i;
+		else
+			screwDispalcementArray[i]=DQoperations::mulDQ(screwDispalcementArray[i-1],screwDispalcementArray_i);
+	}
+
+
+	return screwDispalcementArray;	
+}
+
+std::vector<Matrix<double,8,1> > DQoperations::fkm_revolute_only(RowVectorXd q /*q is defined as [q1 q2 ...]*/, std::vector<RowVector3d> u, std::vector<RowVector3d> p)
+{
+	int joint_size=q.size();
+	std::vector<Matrix<double,8,1> > screwDispalcementArray;
+	screwDispalcementArray.clear();
+	screwDispalcementArray.resize(joint_size);
+
+	if (u.size()!=joint_size || p.size()!=joint_size)
+	{
+		std::cerr << "Size mismatch error in the input for forward kinematic computation." << "u_size"<< std::endl;
+		std::cerr << "u_size"<< u.size()<< std::endl;
+		std::cerr << "p_size"<< p.size()<< std::endl;
+		std::cerr << "q_size"<< joint_size<< std::endl;
+		return screwDispalcementArray;
+	}
+
+	for (int i=0;i<joint_size; i++)
+	{
+		double theta_i=q[i];
+		RowVector3d u_i=u[i];
+		RowVector3d p_i=p[i];
+		double d_i=0;
+		Matrix<double,8,1> screwDispalcementArray_i;
+		screwDispalcementArray_i= DQoperations::screw2DQ(theta_i, u_i, d_i, p_i.cross(u_i));
+		if (i==0)
+			screwDispalcementArray[i]=screwDispalcementArray_i;
+		else
+			screwDispalcementArray[i]=DQoperations::mulDQ(screwDispalcementArray[i-1],screwDispalcementArray_i);
+	}
+
+
+	return screwDispalcementArray;		
+}
+
+MatrixXd DQoperations::jacobian_revolute_only(RowVectorXd q /*q is defined as [q1 q2 ...]*/, std::vector<RowVector3d> u, std::vector<RowVector3d> p , Matrix<double,8,1> pose_ee_init)
+{
+	int joint_size=q.size();
+
+	MatrixXd jacobian_result(6,joint_size);
+
+	std::vector<Matrix<double,8,1> > screwDispalcementArray;
+	screwDispalcementArray.clear();
+	screwDispalcementArray.resize(joint_size);
+
+	screwDispalcementArray=	DQoperations::fkm_revolute_only(q, u, p);
+	Matrix<double,8,1> screwDispalcementArray_i, screw_axis_i, pose_i;
+	
+	screwDispalcementArray_i= screwDispalcementArray[joint_size-1];/*The numbering in C++ starts at 0*/
+	
+	screwDispalcementArray_i=DQoperations::mulDQ(DQoperations::mulDQ(screwDispalcementArray_i, pose_ee_init), DQoperations::combinedConjDQ(screwDispalcementArray_i));
+	
+	RowVector3d pose_ee_now;
+	Matrix4d htm_ee_now;
+	htm_ee_now=DQoperations::dq2HTM(screwDispalcementArray_i);
+	// pose_ee_now << htm_ee_now(0,3), htm_ee_now(1,3), htm_ee_now(2,3);
+	// std::cout << "pose_ee_now_including_rotation(using dq2HTM): " << pose_ee_now << std::endl;
+	pose_ee_now << screwDispalcementArray_i(5), screwDispalcementArray_i(6), screwDispalcementArray_i(7); 
+	// std::cout << "pose_ee_now_no_rotation(original): " << pose_ee_now << std::endl;	
+	jacobian_result.col(0)<< (p[0].cross(u[0])- pose_ee_now.cross(u[0])).transpose(), u[0].transpose();/*writing Jacobian seperately for first joint for faster operation*/
+	
+	for(int i=1; i<joint_size; i++)
+	{
+		screwDispalcementArray_i=screwDispalcementArray[i-1];
+	
+		screw_axis_i<< 0, u[i].transpose(), 0, (p[i].cross(u[i])).transpose();
+	
+		screw_axis_i=DQoperations::mulDQ(DQoperations::mulDQ(screwDispalcementArray_i, screw_axis_i), DQoperations::classicConjDQ(screwDispalcementArray_i));	
+	
+		RowVector3d u_i, p_i;
+		u_i << screw_axis_i(1), screw_axis_i(2), screw_axis_i(3);
+		pose_i << 1, 0, 0, 0, 0, p[i].transpose();
+		pose_i= DQoperations::mulDQ(DQoperations::mulDQ(screwDispalcementArray_i, pose_i), DQoperations::combinedConjDQ(screwDispalcementArray_i));
+		p_i << pose_i(5), pose_i(6), pose_i(7);
+		jacobian_result.col(i) << (p_i.cross(u_i)- pose_ee_now.cross(u_i)).transpose(), u_i.transpose(); 	
+	}
+
+	return jacobian_result;
+}
+
+MatrixXd DQoperations::jacobian_dual_vm(RowVectorXd q /*q is defined as [q1 d1 q2 d2 ...]*/, RowVectorXd joint_type, std::vector<RowVector3d> u, std::vector<RowVector3d> p , Matrix<double,8,1> pose_ee_init)
+{
+	// Some changes from regular jacobian calculation:
+	// 1. q format is [q1 d1 q2 d2 ...] instead of [q1 q2 ...].
+	// 2. We are using fkm_dual here instead of fkm_revolute_only.
+	// 3. We need extra input(RowVectorXd joint_type) to tell which joints are revolute and which are prismatic, 0 for revolute and 1 for prismatic.
+	// 4. To get the ee velocity from joint velocity you just have to make a column array with active joints, i.e., if is revolute, just put the joint velocity of the revolute joint in the respective position and similarly from prismatic joint.
+
+	int joint_size=q.size()/2;
+
+	MatrixXd jacobian_result(6,joint_size);
+
+	std::vector<Matrix<double,8,1> > screwDispalcementArray;
+	screwDispalcementArray.clear();
+	screwDispalcementArray.resize(joint_size);
+
+	screwDispalcementArray=	DQoperations::fkm_dual(q, u, p);
+	Matrix<double,8,1> screwDispalcementArray_i, screw_axis_i, pose_i;
+	
+	screwDispalcementArray_i= screwDispalcementArray[joint_size-1];/*The numbering in C++ starts at 0*/
+	
+	screwDispalcementArray_i=DQoperations::mulDQ(DQoperations::mulDQ(screwDispalcementArray_i, pose_ee_init), DQoperations::combinedConjDQ(screwDispalcementArray_i));
+	
+	RowVector3d pose_ee_now;
+	Matrix4d htm_ee_now;
+	htm_ee_now=DQoperations::dq2HTM(screwDispalcementArray_i);
+	// pose_ee_now << htm_ee_now(0,3), htm_ee_now(1,3), htm_ee_now(2,3);
+	// std::cout << "pose_ee_now_including_rotation(using dq2HTM): " << pose_ee_now << std::endl;
+	pose_ee_now << screwDispalcementArray_i(5), screwDispalcementArray_i(6), screwDispalcementArray_i(7); 
+	// std::cout << "pose_ee_now_no_rotation(original): " << pose_ee_now << std::endl;	
+	if(joint_type(0)==0)
+		jacobian_result.col(0)<< (p[0].cross(u[0])- pose_ee_now.cross(u[0])).transpose(), u[0].transpose();/*writing Jacobian seperately for first joint for faster operation*/
+	else
+		jacobian_result.col(0)<< u[0].transpose(), 0, 0, 0;
+
+	for(int i=1; i<joint_size; i++)
+	{
+		screwDispalcementArray_i=screwDispalcementArray[i-1];
+	
+		screw_axis_i<< 0, u[i].transpose(), 0, (p[i].cross(u[i])).transpose();
+	
+		screw_axis_i=DQoperations::mulDQ(DQoperations::mulDQ(screwDispalcementArray_i, screw_axis_i), DQoperations::classicConjDQ(screwDispalcementArray_i));	
+	
+		RowVector3d u_i, p_i;
+		u_i << screw_axis_i(1), screw_axis_i(2), screw_axis_i(3);
+		pose_i << 1, 0, 0, 0, 0, p[i].transpose();
+		pose_i= DQoperations::mulDQ(DQoperations::mulDQ(screwDispalcementArray_i, pose_i), DQoperations::combinedConjDQ(screwDispalcementArray_i));
+		p_i << pose_i(5), pose_i(6), pose_i(7);
+		if(joint_type(i)==0)
+			jacobian_result.col(i) << (p_i.cross(u_i)- pose_ee_now.cross(u_i)).transpose(), u_i.transpose(); 	
+		else
+			jacobian_result.col(i) << u_i.transpose(), 0, 0, 0;
+	}
+
+	return jacobian_result;
+}
+
+double DQoperations::normalizeAngle(double theta)
+{
+	if (theta < 0)
+		while (theta<0)
+			theta= theta+ 2*M_PI;
+	else if(theta >=2*M_PI)
+		while (theta>=2*M_PI)
+			theta=theta-2*M_PI;
+	return theta;
+}
+
+double DQoperations::get_error_screw_param(Matrix<double,8,1> pose_now, Matrix<double,8,1> pose_ee_desired,  RowVector3d &v_e, RowVector3d &w_e)
+{
+	Matrix<double,8,1> pose_error;
+	pose_error=DQoperations::mulDQ(pose_now, DQoperations::classicConjDQ(pose_ee_desired));
+	// std::cout << "pose_now: " << pose_now.transpose() << std::endl;
+	// std::cout << "pose_ee_desired: " << pose_ee_desired.transpose() << std::endl;
+	// std::cout << "pose_error: " << pose_error.transpose() << std::endl;
+	RowVector3d l_e, m_e;
+	double theta_e, d_e;
+	DQoperations::dq2screw(pose_error, theta_e, d_e, l_e, m_e);
+	theta_e=normalizeAngle(theta_e);
+
+	v_e = theta_e*m_e + d_e*l_e;
+	w_e = theta_e*l_e;
+
+	double norm_error;
+	norm_error=v_e.norm()+w_e.norm();
+	// std::cout << "norm_error:" << norm_error << std::endl;
+	return norm_error;
+}
+
+void DQoperations::dqEigenToDQdouble(RowVectorXd dq_eigen, std::vector<double> &dq_double)
+{
+	dq_double.clear();
+	// dq_double.resize(dq_eigen.size());
+	// std::cout << "dq_eigen.rows(): " << dq_eigen.rows() << "cols: " << dq_eigen.cols() << std::endl;
+	// std::cout << "dq_double:" << std::endl;
+	for (int i=0; i< dq_eigen.size(); i++)
+	{
+		dq_double.push_back(dq_eigen(i));
+		// std::cout << dq_double[i] << std::endl;
+	}
+}
+
+void DQoperations::doubleToDQ(Matrix<double,8,1> &dq_eigen, std::vector<double> dq_double)
+{
+	// std::cout << "dq_double:" << std::endl;
+	for (int i=0; i< dq_double.size(); i++)
+	{
+		dq_eigen(i)=dq_double[i];
+	}
+}
+
+std::vector<double>  DQoperations::dqEigenToDQdouble(RowVectorXd dq_eigen)
+{
+	std::vector<double> dq_double;
+	dq_double.clear();
+	for (int i=0; i< dq_eigen.size(); i++)
+	{
+		dq_double.push_back(dq_eigen(i));
+	}
+	return dq_double;
+}
+
+RowVectorXd DQoperations::doubleVector2Rowvector(std::vector<double> doubleVector)
+{
+	RowVectorXd eigenDouble=RowVectorXd::Zero(doubleVector.size());
+	for (int i=0; i< doubleVector.size(); i++)
+	{
+		eigenDouble(i)=doubleVector[i];
+	}
+	return eigenDouble;
+}
+
+std::vector<double>  DQoperations::DQToDouble(Matrix<double,8,1> dq_eigen)
+{
+	std::vector<double> dq_double;
+	dq_double.clear();
+	for (int i=0; i< 8; i++)
+	{
+		dq_double.push_back(dq_eigen(i,0));
+	}
+	return dq_double;
+}
+
+Matrix<double,8,1> DQoperations::doubleToDQ(std::vector<double> dq_double)
+{
+	MatrixXd dq_eigen=MatrixXd::Zero(dq_double.size(),1);
+	for (int i=0; i< dq_double.size(); i++)
+	{
+		dq_eigen(i)=dq_double[i];
+	}
+	return dq_eigen;
+}

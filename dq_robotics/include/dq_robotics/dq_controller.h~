@@ -1,0 +1,24 @@
+#ifndef DQController_H
+#define DQController_H
+
+#include <baxter_trajectory_interface/DQoperations.h>
+#include <cmath>
+#include <vector>
+#include <iostream>
+#include <math.h>
+
+class DQController
+{
+
+public:
+	static std::vector<Matrix<double,8,1> > fkmDual(std::vector<RowVector3d> u,std::vector<RowVector3d> p, RowVectorXd q, std::vector<int> joint_type);
+	static MatrixXd jacobianDual(std::vector<RowVector3d> u, std::vector<RowVector3d> p, Matrix<double,8,1> pe_init, std::vector<int> joint_type, std::vector<Matrix<double,8,1> > fkm_current);
+	static MatrixXd jacobianDual_8d(int joint_size, MatrixXd jacobian);
+	// void getDQderivative();
+	static RowVectorXd getScrewError_8d(Matrix<double,8,1> pose_now, Matrix<double,8,1> pose_desired);
+	static RowVectorXd calculateControlVel(double Kp, double mu, RowVectorXd screwError_8d, MatrixXd jacobian_8d, int joint_size);
+	static RowVectorXd normalizeControlVelocity( RowVectorXd q_dot, std::vector<double> joint_velocity_limit);
+	DQController();
+	~DQController();
+};
+#endif

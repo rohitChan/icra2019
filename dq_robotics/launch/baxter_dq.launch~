@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<launch>
+	<rosparam command="load" file="$(find dq_robotics)/config/baxter_param_mod.yaml" />
+	<rosparam command="load" file="$(find dq_robotics)/config/velocity_ffController_param.yaml" />
+	<!-- <rosparam command="load" file="$(find baxter_trajectory_interface)/config/vm_param.yaml" /> -->
+	<!-- 	<rosparam command="load" file="$(find baxter_trajectory_interface)/config/vm_steering.yaml" /> -->
+	<!-- <node pkg="baxter_trajectory_interface" type="controller_dq" name="controller_dq" output="screen" launch-prefix="valgrind" /> -->
+	<node pkg="dq_robotics" type="baxter_pose_Control_server" name="baxter_pose_Control_server" output="screen" /> 
+	<!-- 		<node pkg="ar10_local" type="ar10_jointCommander" name="ar10_jointCommander" output="screen" />  -->
+</launch>

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<launch>
+	<!-- <param name="result_file_name" type="string" value="result_k_0.5.csv" /> -->
+<!-- 	<rosparam command="load" file="$(find baxter_trajectory_interface)/config/baxter_param_mod.yaml" />
+	<rosparam command="load" file="$(find baxter_trajectory_interface)/config/velocity_ffController_param.yaml" /> -->
+	<!-- <rosparam command="load" file="$(find baxter_trajectory_interface)/config/vm_param.yaml" /> -->
+	<!-- 	<rosparam command="load" file="$(find baxter_trajectory_interface)/config/vm_steering.yaml" /> -->
+	<!-- <node pkg="baxter_trajectory_interface" type="controller_dq" name="controller_dq" output="screen" launch-prefix="valgrind" /> -->
+	<rosparam command="load" file="$(find dq_robotics)/config/finger_params.yaml" />
+	<rosparam command="load" file="$(find dq_robotics)/config/controller_param.yaml" />
+	<node pkg="dq_robotics" type="ar10Kinematics" name="ar10Kinematics" output="screen" />
+	<node pkg="tf2_ros" type="static_transform_publisher" name="ar10_right_palm2right_handBaxter" args="0 0 0 0 0 -0.7071068 0.7071068 right_hand ar10_right/wrist_plate" />
+<!-- 	<node pkg="tf2_ros" type="static_transform_publisher" name="ar10_right_ciruitSupport2ar10_right_origin" args="0 0 0.012 0 0 0 1 ar10_right/wrist_plate ar10_right/circuit_support" /> -->
+<!-- 		<node pkg="tf2_ros" type="static_transform_publisher" name="ar10_right_palm_centre2ar10_right_palm" args="0 0 0.038 0 0 0 1 ar10_right/palm ar10_right/palm_centre" />
+ -->
+<!-- 	<node pkg="ar10_local" type="ar10_jointCommander" name="ar10_jointCommander" output="screen" /> -->
+</launch>

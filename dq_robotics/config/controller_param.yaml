@@ -1,0 +1,6 @@
+ar10_dt: 1
+ar10_Kp: 0.5
+ar10_mu: 0.001
+ar10_slider_cmd_tolerance: 0.001
+ar10_timeStep: 00.1
+result_file_name: 'thumb_ik.csv'

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<launch>
+	<param name="hand" type="string" value="left" />
+	<param name="state" type="string" value="close" />
+	<node pkg="baxter_trajectory_interface" type="openGrasp" name="openGrasp" output="screen" />
+	<!-- <node pkg="ar10_local" type="ar10_jointCommander" name="ar10_jointCommander" output="screen" /> -->
+</launch>

@@ -1,0 +1,248 @@
+#include <dq_robotics/dq_controller.h>
+using namespace Eigen;
+
+DQController::DQController(){}
+DQController::~DQController(){}
+
+std::vector<Matrix<double,8,1> > DQController::fkmDual(std::vector<RowVector3d> u,std::vector<RowVector3d> p, RowVectorXd q, std::vector<int> joint_type)
+{
+	int joint_size=joint_type.size();
+// ROS_INFO("joint_size=%d", joint_size);
+	RowVectorXd q_dual;	
+	q_dual=RowVectorXd::Zero(joint_size*2);
+// ROS_INFO("11");
+	for (int j=0; j< joint_size; j++)
+	{
+		if(joint_type[j]==0)
+			q_dual(2*j)=q(j);
+		else
+			q_dual(2*j+1)=q(j);
+		// ROS_INFO("j=%d", j);
+	}
+// ROS_INFO("00");
+	std::vector<Matrix<double,8,1> > fkm_current;
+	fkm_current.clear();
+	fkm_current.resize(joint_size);
+// ROS_INFO("22");
+	for (int i=0;i<joint_size; i++)
+	{
+		double theta_i=q_dual[2*i];
+		RowVector3d u_i=u[i];
+		RowVector3d p_i=p[i];
+		double d_i=q_dual[2*i+1];
+		Matrix<double,8,1> screwDispalcementArray_i;
+		screwDispalcementArray_i= DQoperations::screw2DQ(theta_i, u_i, d_i, p_i.cross(u_i));
+		// std::cout << "screwDispalcementArray_" << i << ": " << screwDispalcementArray_i.transpose() << std::endl;
+		if (i==0)
+			fkm_current[i]=screwDispalcementArray_i;
+		else
+			fkm_current[i]=DQoperations::mulDQ(fkm_current[i-1],screwDispalcementArray_i);
+		// ROS_INFO("i=%d",i);
+		// std::cout << "fkm_current_source_" << i << ": " << fkm_current[i].transpose() << std::endl;
+	}
+
+	return fkm_current;
+}
+
+MatrixXd DQController::jacobianDual(std::vector<RowVector3d> u, std::vector<RowVector3d> p, Matrix<double,8,1> pe_init, std::vector<int> joint_type, std::vector<Matrix<double,8,1> > fkm_current)
+{
+	int joint_size =u.size();
+
+	MatrixXd jacobian;
+	jacobian =MatrixXd::Zero(6,joint_size);
+	
+
+	Matrix<double,8,1> screwDispalcementArray_i, screw_axis_i, pose_i;
+	
+	screwDispalcementArray_i= fkm_current[joint_size-1];/*The numbering in C++ starts at 0*/
+	
+	screwDispalcementArray_i=DQoperations::mulDQ(DQoperations::mulDQ(screwDispalcementArray_i, pe_init), DQoperations::combinedConjDQ(screwDispalcementArray_i));
+	
+	RowVector3d pose_ee_now;
+
+	pose_ee_now << screwDispalcementArray_i(5), screwDispalcementArray_i(6), screwDispalcementArray_i(7); 
+
+	if(joint_type[0]==0)
+	{
+		jacobian.col(0)<< (p[0].cross(u[0])).transpose(), u[0].transpose();/*writing Jacobian seperately for first joint for faster operation*/
+	}
+	else
+	{
+		jacobian.col(0)<< u[0].transpose(), 0, 0, 0;
+		
+	}
+
+	for(int i=1; i<joint_size; i++)
+	{
+
+		screwDispalcementArray_i=fkm_current[i-1];
+	
+		screw_axis_i<< 0, u[i].transpose(), 0, (p[i].cross(u[i])).transpose();
+	
+		screw_axis_i=DQoperations::mulDQ(DQoperations::mulDQ(screwDispalcementArray_i, screw_axis_i), DQoperations::classicConjDQ(screwDispalcementArray_i));	
+	
+		RowVector3d u_i, p_i;
+		u_i << screw_axis_i(1), screw_axis_i(2), screw_axis_i(3);
+		pose_i << 1, 0, 0, 0, 0, p[i].transpose();
+		pose_i= DQoperations::mulDQ(DQoperations::mulDQ(screwDispalcementArray_i, pose_i), DQoperations::combinedConjDQ(screwDispalcementArray_i));
+		p_i << pose_i(5), pose_i(6), pose_i(7);
+		if(joint_type[i]==0)
+		{
+			jacobian.col(i) << (p_i.cross(u_i)).transpose(), u_i.transpose(); 
+		}
+		else
+			jacobian.col(i) << u_i.transpose(), 0, 0, 0;
+	}
+	return jacobian;
+}
+
+MatrixXd DQController::jacobianDual_8d(int joint_size, MatrixXd jacobian)
+{
+	MatrixXd jacobian_8d;
+	jacobian_8d=MatrixXd::Zero(8,joint_size);
+    jacobian_8d.row(1)=jacobian.row(0);
+	jacobian_8d.row(2)=jacobian.row(1);
+	jacobian_8d.row(3)=jacobian.row(2);
+	jacobian_8d.row(5)=jacobian.row(3);
+	jacobian_8d.row(6)=jacobian.row(4);
+	jacobian_8d.row(7)=jacobian.row(5);
+	return jacobian_8d;
+}
+
+// MatrixXd = DQController::getJacobianDot(link_velocity_right, jacobian_6d);
+// {
+// 	int joint_size = jacobian_6d.cols();
+// 	MatrixXd jacobian_6d_dot_right = MatrixXd::Zero(6, joint_size);
+// 		for (int i=0;i<joint_size; i++)
+// 	{
+// 	}
+// }
+MatrixXd DQController::getJacobianDot(MatrixXd link_velocity, MatrixXd jacobian_6d)
+{
+	int joint_size = jacobian_6d.cols();
+	MatrixXd jacobian_6d_dot = MatrixXd::Zero(6, joint_size);
+	for (int i=0;i<joint_size; i++)
+	{
+		jacobian_6d_dot.col(i) = DQoperations::crossProductOp_6d(link_velocity.col(i))*jacobian_6d.col(i);		
+	} 
+	return jacobian_6d_dot;
+}
+
+MatrixXd DQController::linkVelocites(MatrixXd jacobian_6d, RowVectorXd joint_velocities)
+{
+	// link_velocities.col(0) refers to first link velocity and so on, because we assume the joint is fixed with child links
+	int joint_size = jacobian_6d.cols();
+	MatrixXd link_velocities = MatrixXd::Zero(6, joint_size);
+	for (int i=0;i<joint_size; i++)
+	{
+		if(i == 0)
+			link_velocities.col(i) = jacobian_6d.col(i)*joint_velocities(i);
+		else
+			link_velocities.col(i) = link_velocities.col(i-1) + jacobian_6d.col(i)*joint_velocities(i);
+	}
+	return link_velocities;
+}
+
+RowVectorXd DQController::getScrewError_8d(Matrix<double,8,1> pose_now, Matrix<double,8,1> pose_desired)
+{
+	RowVectorXd screw_error=RowVectorXd::Zero(8);
+	RowVector3d v_e, w_e;	
+ 	double norm_error_position=DQoperations::get_error_screw_param(pose_now, pose_desired,  v_e, w_e);
+ 	screw_error << 0, v_e(0), v_e(1), v_e(2), 0, w_e(0), w_e(1), w_e(2);
+ 	// std::cout << "screwError(getScrewError_8d): " << 0 << v_e(0) << v_e(1) << v_e(2) << 0 << w_e(0) << w_e(1) << w_e(2) << std::endl;
+ 	return screw_error;
+}
+
+RowVectorXd DQController::calculateControlVel_velcityFF(double Kp, double mu, RowVectorXd screwError_8d, MatrixXd jacobian_8d, int joint_size, Matrix<double,8,1> cart_velocity_desired)
+{
+	screwError_8d=-Kp*screwError_8d+DQoperations::Matrix8d2RowVector8d(cart_velocity_desired);
+	// ROS_INFO("5");
+	MatrixXd jacobian_damped_, A; 
+	// std::cout << "jacobian_.size: " << jacobian_.rows() << ":" << jacobian_.cols() << std::endl; 
+	A= jacobian_8d.transpose()*jacobian_8d + mu*MatrixXd::Identity(joint_size, joint_size); 
+	jacobian_damped_=((A.inverse())*jacobian_8d.transpose());	
+	// std::cout << "screw_error_.size: " << screw_error_.rows() << ":" << screw_error_.cols() << std::endl; 
+	// std::cout << "jacobian_damped_.size: " << jacobian_damped_.rows() << ":" << jacobian_damped_.cols() << std::endl; 
+	RowVectorXd q_dot_1=(jacobian_damped_*screwError_8d.transpose()).transpose();	
+	// RowVectorXd q_dot_1=(pseudoInverse(jacobian_)*screw_error_.transpose()).transpose();	
+	RowVectorXd q_dot;
+	q_dot=q_dot_1;
+	return q_dot;
+}
+
+
+RowVectorXd DQController::jointVelocity4velocityControl(double Kp, double mu, std::vector<RowVector3d> u, std::vector<RowVector3d> p, Matrix<double,8,1> pose_now, Matrix<double,8,1> pe_init, std::vector<int> joint_type, Matrix<double,8,1> pose_desired, Matrix<double,8,1> cart_vel_desired, std::vector<Matrix<double,8,1> >  fkm_matrix, double& norm_error)
+{
+	
+	int joint_size=u.size();
+	// std::cout << "fkm_matrix: " << std::endl;
+
+	// for (int i=0; i<u.size(); i++)
+	// {
+	// 	std::cout << fkm_matrix[i] << std::endl;
+	// 	std::cout << "u_left[i]: " << u[i] << std::endl;
+	// 	std::cout << "p_left[i]: " << p[i] << std::endl;		
+	// }
+
+// std::cout << "pose_now: " << pose_now << std::endl;
+// std::cout << "pose_desired: " << pose_desired << std::endl;
+// std::cout << "pe_init: " << pe_init << std::endl;
+	MatrixXd jacobian_8d;
+	jacobian_8d= DQController::jacobianDual(u, p, pe_init, joint_type, fkm_matrix);	
+	jacobian_8d= DQController::jacobianDual_8d(joint_size, jacobian_8d);
+	// std::cout << "jacobian_8d: " << std::endl;
+	// std::cout << jacobian_8d << std::endl;
+	RowVectorXd screw_error= DQController::getScrewError_8d(pose_now, pose_desired);
+
+	norm_error=screw_error.norm();
+	// RowVectorXd q_dot= DQController::calculateControlVel_velcityFF(Kp, mu, screw_error, jacobian_8d, joint_size, cart_vel_desired);
+	RowVectorXd q_dot= DQController::calculateControlVel(Kp, mu, screw_error, jacobian_8d, joint_size);
+	// std::cout << "q_dot: " << q_dot << std::endl;
+	return q_dot;
+
+}
+
+RowVectorXd DQController::calculateControlVel(double Kp, double mu, RowVectorXd screwError_8d, MatrixXd jacobian_8d, int joint_size)
+{
+	screwError_8d=-Kp*screwError_8d;
+	// ROS_INFO("5");
+	MatrixXd jacobian_damped_, A; 
+	// std::cout << "jacobian_.size: " << jacobian_.rows() << ":" << jacobian_.cols() << std::endl; 
+	A= jacobian_8d.transpose()*jacobian_8d + mu*MatrixXd::Identity(joint_size, joint_size); 
+	jacobian_damped_=((A.inverse())*jacobian_8d.transpose());	
+	// std::cout << "screw_error_: " << screwError_8d  << std::endl; 
+	// std::cout << "jacobian_damped_: "  << std::endl; 
+	// std::cout << jacobian_damped_ << std::endl; 
+	RowVectorXd q_dot_1=(jacobian_damped_*screwError_8d.transpose()).transpose();	
+	// std::cout << "q_dot_1: " << q_dot_1  << std::endl; 	
+	// RowVectorXd q_dot_1=(pseudoInverse(jacobian_)*screw_error_.transpose()).transpose();	
+	RowVectorXd q_dot;
+	q_dot=q_dot_1;
+	return q_dot;
+}
+
+RowVectorXd DQController::normalizeControlVelocity( RowVectorXd q_dot, std::vector<double> joint_velocity_limit)
+{
+	std::vector<double> ratio;
+	bool shouldNormalizeVelocity=false;
+	double ratio_to_normalize_velocity_cmds=1.0;
+	ratio.clear();
+	int joint_size=q_dot.size();
+  		// ROS_INFO("Hi norm 1");
+  	for(int i=0; i<q_dot.size(); i++)
+  	{
+  		// ROS_INFO("Hi norm 2, i=%d", i);
+  		double ratio_i=1;
+  		ratio_i=fabs(q_dot(i)/(0.5*joint_velocity_limit[i]));
+  		ratio.push_back(ratio_i);
+  		if(ratio_i>1)
+  			shouldNormalizeVelocity=true;
+  	}
+  	if(shouldNormalizeVelocity)
+  	{
+  		// ROS_INFO("Hi norm 3");
+  		ratio_to_normalize_velocity_cmds = *max_element(ratio.begin(), ratio.end());
+  		q_dot=q_dot/(ratio_to_normalize_velocity_cmds);
+  	}
+  	return q_dot;
+}

@@ -1,0 +1,168 @@
+# Ref Frame: ar10_right_mod/base
+# Target frame: /ar10_right/thumb1
+thumb_right_u0: [-0.277121, -5.55112e-17, -0.960835] # in -X direction from htm below, coz that how frames are defined by AR10 guys.
+thumb_right_p0: [-0.0414157, 0.0035, 0.0708087]
+# Both htm and dq are original after 180 degrees rotation around z axis to have the x axis aligned with the axis
+# htm: 
+   # -0.2771   -0.6347    0.7214   -0.0414
+   # -0.0000    0.7508    0.6606    0.0035
+   # -0.9608    0.1831   -0.2081    0.0708  # this is 0.06 and do rememeber to rotate along z axis 180 degrees.
+   #       0         0         0    1.0000
+# dq:
+thumb_right_frame0: [0.5625,   -0.2122,    0.7477,    0.2821,   -0.0142,   -0.0336,    0.0005,    0.0018]
+
+# Ref Frame: ar10_right_mod/base
+# Target frame: /ar10_right/thumb3.1
+thumb_right_u1: [0.722582, 0.659384, -0.207576] # in -X direction from htm below, coz that how frames are defined by AR10 guys.
+thumb_right_p1: [-0.0684005, 0.0279737, 0.0763036]
+# Both htm and dq are original after 180 degrees rotation around z axis to have the x axis aligned with the axis
+# htm: 
+   # -0.7226   -0.5058   -0.4712   -0.0684
+   # -0.6594    0.7090    0.2501    0.0280
+   #  0.2076    0.4914   -0.8458    0.0763  # this is 0.066 and do rememeber to rotate along z axis 180 degrees.
+   #       0         0         0    1.0000
+ # dq:
+thumb_right_frame1: [0.2048,   -0.9052,   -0.3218,    0.1875,   -0.0326,    0.0062,   -0.0206,    0.0304]
+
+# Ref Frame: ar10_right_mod/base
+# Target frame: /ar10_right/thumbtip
+thumb_right_ee_init: [0.905343, 0.204069, 0.187212, 0.321964, -0.0135809, -0.0402491, 0.0571297, 0.0304804]  #/ar10_right/thumbtip
+
+thumb_right_joint_type: [0, 0]
+thumb_right_joint_names: ['servo0', 'servo1']
+
+thumb_right_root_name: 'ar10_right_mod/hand_base'
+thumb_right_tip_name: '/ar10_right_mod/thumb/thumbTip'
+
+###################### FOR INDEX FINGER ##################################################################
+# Ref Frame: ar10_right_mod/indexFinger/hand_base
+# Target frame: /ar10_right_mod/indexFinger/planar_rot_0
+index_right_u0: [-1,-1.11022e-16,0]
+index_right_p0: [-0.0565,0.0072,0.1351]
+index_right_frame_0: [0.499196,  0.500803, -0.499196, -0.500803,  0.049774, 0.0178155, 0.0214787,   0.04602]
+# htm: 
+#  1.11022e-16 -1.11022e-16           -1      -0.0565
+#    -0.999995  -0.00321493 -1.11022e-16       0.0072
+#  -0.00321493     0.999995            0       0.1351
+#            0            0            0            1
+
+# Ref Frame: ar10_right_mod/indexFinger/hand_base
+# Target frame: /ar10_right_mod/indexFinger/planar_rot_1
+index_right_u1: [-1,0,0]
+index_right_p1: [-0.0565,0.0162579,0.179329]
+
+index_right_frame_1: [0.501273,  0.498724, -0.501273, -0.498724, 0.0628816, 0.0267314, 0.0347038, 0.0550534]
+# htm: 
+#          0          0         -1    -0.0565
+#  -0.999987 0.00509936          0  0.0162579
+# 0.00509936   0.999987          0   0.179329
+#          0          0          0          1
+
+# Ref Frame: ar10_right_mod/indexFinger/hand_base
+# Target frame: /ar10_right_mod/indexFinger/planar_rot_2
+index_right_u2: [-1,-1.11022e-16,0]
+index_right_p2: [-0.0565,0.0277979,0.206771]
+
+index_right_frame_2: [0.501391,  0.498605, -0.501391, -0.498605, 0.0726029, 0.0307422, 0.0444317, 0.0590708]
+# htm: 
+#            0  1.11022e-16           -1      -0.0565
+#    -0.999984   0.00557277 -1.11022e-16    0.0277979
+#   0.00557277     0.999984            0     0.206771
+#            0            0            0            1
+
+# Ref Frame: ar10_right_mod/indexFinger/hand_base
+# Target frame: /ar10_right_mod/indexFinger/fingerTip
+# u: [-1,-1.11022e-16,2.22045e-16]
+# p: [-0.0465,0.0492904,0.227034]
+# DQ: 
+index_right_ee_init: [0.500773,  0.499226, -0.500773, -0.499226, 0.0806192, 0.0328997, 0.0574052, 0.0561856]
+# htm: 
+#  2.22045e-16  1.11022e-16           -1      -0.0465
+#    -0.999995   0.00309348 -1.11022e-16    0.0492904
+#   0.00309348     0.999995  2.22045e-16     0.227034
+#            0            0            0            1
+
+index_right_q_init: [0.59044489, 0.81437063, 4.1102504]
+
+index_right_joint_type: [0, 0, 0]
+index_right_joint_names: ['servo8', 'servo9']
+
+index_right_root_name: 'ar10_right_mod/hand_base'
+index_right_tip_name: '/ar10_right_mod/indexFinger/fingerTip'
+
+
+################## FOR RELATIVE WITH TIP AT INDEX FINGERTIP AND END EFFECTOR AT THUMB TIP ##############################################
+
+
+# Ref Frame: /ar10_right_mod/indexFinger/fingerTip
+# Target frame: /ar10_right_mod/indexFinger/planar_rot_2
+ar10_right_rel_u0: [0,0,1]
+ar10_right_rel_p0: [0.0215,-0.0203,0.01]
+ar10_right_rel_frame0: [1, 0,  0,  0,  0,  0.01075, -0.01015,    0.005]
+# htm: 
+#       1       0       0  0.0215
+#       0       1       0 -0.0203
+#       0       0       1    0.01
+#       0       0       0       1
+
+# Ref Frame: /ar10_right_mod/indexFinger/fingerTip
+# Target frame: /ar10_right_mod/indexFinger/planar_rot_1
+ar10_right_rel_u1: [0,-0,1]
+ar10_right_rel_p1: [0.032889,-0.0478046,0.01]
+ar10_right_rel_frame1: [1,           -0,           -0, -0.000199915,  9.99577e-07,    0.0164493,    -0.023899,        0.005]
+# htm: 
+#           1 0.000399831           0    0.032889
+# -0.000399831           1          -0  -0.0478046
+#          -0           0           1        0.01
+#           0           0           0           1
+
+# Ref Frame: /ar10_right_mod/indexFinger/fingerTip
+# Target frame: /ar10_right_mod/indexFinger/planar_rot_0
+ar10_right_rel_u2: [0,-0,1]
+ar10_right_rel_p2: [0.0415903,-0.0921054,0.01]
+ar10_right_rel_frame2:   [0.999984,          -0,          -0, -0.00563462, 2.81731e-05,   0.0210543,  -0.0459348,  0.00499992]
+# htm: 
+#   0.999937  0.0112691          0  0.0415903
+# -0.0112691   0.999937         -0 -0.0921054
+#         -0          0          1       0.01
+#          0          0          0          1
+
+# Ref Frame: /ar10_right_mod/indexFinger/fingerTip
+# Target frame: /ar10_right_mod/thumb/middle_phalanx
+ar10_right_rel_u3: [-0.00539304, -0.960803, 0.277181]
+ar10_right_rel_p3: [0.044876, -0.167134, -0.00508314]
+ar10_right_rel_frame3:  [0.339306,   0.618203,  -0.691751,  -0.155491, -0.0720738,  0.0188491,  -0.026437,  0.0352773]
+# htm: 
+# -0.00539304   -0.749767    -0.66168    0.044876
+#   -0.960803    0.187296   -0.204399   -0.167134
+#    0.277181    0.634641   -0.721388 -0.00508314
+#           0           0           0           1
+
+# Ref Frame: /ar10_right_mod/indexFinger/fingerTip
+# Target frame: /ar10_right_mod/thumb/distal_phalanx
+ar10_right_rel_u4: [-0.660506,-0.203954,-0.722589]
+ar10_right_rel_p4: [0.0205662,-0.161106,0.0218245]
+ar10_right_rel_frame4: [0.280687,  0.301599,  0.416233, -0.810557, 0.0392726, 0.0636373, -0.010984, 0.0316379]
+# htm: 
+# -0.660506  0.706096 -0.255264 0.0205662
+# -0.203954  -0.49593 -0.844071 -0.161106
+# -0.722589 -0.505452  0.471576 0.0218245
+#         0         0         0         1
+
+# Ref Frame: /ar10_right_mod/indexFinger/fingerTip
+# Target frame: /ar10_right_mod/thumb/thumbTip
+# u: [0.254138,0.844885,-0.470725]
+# p: [-0.0214454,-0.12448,0.0461932] 
+ar10_right_rel_ee_init:  [0.301375,  -0.280905,   0.810219,   0.416906,  0.0377867,  -0.047893, -0.0207751, -0.0192104]
+# htm: 
+#  -0.660531  -0.706479   0.254138 -0.0214454
+#  -0.203899   0.494564   0.844885   -0.12448
+#  -0.722581   0.506255  -0.470725  0.0461932
+#          0          0          0          1
+
+
+ar10_right_joint_type: [0, 0, 0, 0, 0]
+ar10_right_joint_names: ['servo9', 'servo8', 'servo0', 'servo1']
+
+ar10_right_root_name: '/ar10_right_mod/indexFinger/fingerTip'
+ar10_right_tip_name: '/ar10_right_mod/thumb/thumbTip'

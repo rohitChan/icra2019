@@ -1,0 +1,14 @@
+# Kp: [5 5 5 5 5 5 5 5 5 5 5 5 5 5]
+Kp: 0.05
+Kp_position: 2
+K_jl: 0.02
+K_jl_position: 0.02
+dt: 0.1
+timeStep: 0.01
+mu: 0.001
+# sleepTimeout: 0.01
+sleepTimeout: 0.001
+norm_error_const: 0.1
+controller_timeout: 5.0
+use_VM: 1
+dualArm: 0

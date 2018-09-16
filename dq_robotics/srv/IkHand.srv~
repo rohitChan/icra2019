@@ -1,0 +1,7 @@
+float64[] desiredPose  
+int32 finger # finger=0 for thumb, finger4=index, and so on
+bool getJacobian
+---
+float64[] normError
+float64[] jointPosition
+kinematics_control_msgs/singleRowColumn[] jacobian

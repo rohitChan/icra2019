@@ -1,0 +1,5 @@
+float64[] desiredPose  
+int finger # finger=0 for thumb, finger4=index, and so on
+---
+float64[] jointPosition
+rowColumn[] jacobian

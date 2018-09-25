@@ -73,7 +73,7 @@ int main(int argc, char **argv)
 
 	// <dq_robotics::ResolveAccControlPrfmnc>("/dq_robotics/trajCntrlResults
 	std::string result_file_name, result_file_path;
-	result_file_name = "quatVec_z_axis_0.01_pitch.csv";
+	result_file_name = "quatBest_270_8_20secs.csv";
 	result_file_path = ros::package::getPath("dq_robotics");
 	result_file_path.append("/src/resolvedAccControl/result/");
 	result_file_path.append(result_file_name);

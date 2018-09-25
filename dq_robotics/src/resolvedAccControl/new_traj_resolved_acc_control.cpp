@@ -119,9 +119,9 @@ void initializeTraj()
 	// 					 0, 1, 0, -0.2,
 	// 					 0, 0, 1, 0.2,
 	// 					 0, 0, 0, 1;
- 	crclCntr_dsrdTraj << -1, 0, 0, 0.15,
-						 0, 1, 0, -0.5,
-						 0, 0, -1, 0.15,
+ 	crclCntr_dsrdTraj << 0, 0, 1, 0.45,
+						 1, 0, 0, -0.8,
+						 0, 1, 0, 0.3,
 						 0, 0, 0, 1;
 	crclCntr_dsrdTraj_dq = DQoperations::htm2DQ(crclCntr_dsrdTraj);
 	// startPose_dsrdTraj << -1, 0, 0, 0,
@@ -129,15 +129,14 @@ void initializeTraj()
 	// 					   0, 0, -1, 0,
 	// 					   0, 0, 0, 1;
 	startPose_dsrdTraj << 1, 0, 0, 0,
-						   0, 1, 0, -0.4,
+						   0, 1, 0, 0,
 						   0, 0, 1, 0,
 						   0, 0, 0, 1;						   
 	startPose_dsrdTraj = crclCntr_dsrdTraj*startPose_dsrdTraj;
 	startPose_dsrdTraj_dq = DQoperations::htm2DQ(startPose_dsrdTraj);
 }
 // name: ['right_e0', 'right_e1', 'right_s0', 'right_s1', 'right_w0', 'right_w1', 'right_w2']
-// position: [-0.5357427901689807, 1.1297768502776073, -0.3321068405771921, -0.7317088358213424, 0.29107285450125725, 1.0684176187621908, -1.6455778902040776]
-
+// position: [0.21629129109184334, 1.6912138186436687, -0.6833884410029518, -0.7938350577307016, 1.5980244857796297, 1.368310862793789, -1.0638156763985345]
 
 // 'right_s0', 'right_s1', 'right_e0', 'right_e1', 'right_w0', 'right_w1', 'right_w2', 'left_s0', 'left_s1', 'left_e0', 'left_e1', 'left_w0', 'left_w1', 'left_w2'
 void resetRobot()
@@ -153,13 +152,13 @@ void resetRobot()
 	}
     ros::Duration(2.0).sleep();
     cmd.mode = baxter_core_msgs::JointCommand::POSITION_MODE;
-    cmd.command[0] = -0.3321068405771921;
-    cmd.command[1] = -0.7317088358213424;
-    cmd.command[2] = -0.5357427901689807;
-    cmd.command[3] = 1.1297768502776073;
-    cmd.command[4] = 0.29107285450125725;
-    cmd.command[5] = 1.0684176187621908;
-    cmd.command[6] = -1.6455778902040776;
+    cmd.command[0] = -0.6833884410029518;
+    cmd.command[1] = -0.7938350577307016;
+    cmd.command[2] = 0.21629129109184334;
+    cmd.command[3] = 1.6912138186436687;
+    cmd.command[4] = 1.5980244857796297;
+    cmd.command[5] = 1.368310862793789;
+    cmd.command[6] = -1.0638156763985345;
     int count_temp =0; 
     while(reset_robot)	
 	{
@@ -395,8 +394,8 @@ void getDesiredTraj()
  	RowVector3d axis, moment;
  	axis << l_startingPose(1), l_startingPose(2), l_startingPose(3);
  	moment << l_startingPose(5), l_startingPose(6), l_startingPose(7);
- 	// double d_traj = traj_pitch*theta;
- 	double d_traj = 0;
+ 	double d_traj = traj_pitch*theta;
+ 	// double d_traj = 0;
 	pose_desired_right = DQoperations::screw2DQ(theta, axis, d_traj, moment);
 	pose_desired_right = DQoperations::mulDQ(startPose_dsrdTraj_dq, pose_desired_right);
 	vel_desired_right = l_baseFrame*theta_d;

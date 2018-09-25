@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<launch>
+	<arg name="load_robot_description" default="true"/>
+	<param if="$(arg load_robot_description)" name="robot_description"
+      command="$(find xacro)/xacro.py --inorder $(find baxter_description)/urdf/baxter.urdf.xacro gazebo:=true"/>
+	<node type="rviz" name="rviz" pkg="rviz" args="-d $(find dq_robotics)/rviz/acc_cntrl.rviz" />
+</launch>      
+
+<!-- rosbag record robot/joint_states tf /dq_robotics/trajCntrlResults dq_robotics/desired_pose dq_robotics/crclCntr_dsrdTraj /robot/limb/right/joint_command  -->

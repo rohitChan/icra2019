@@ -101,7 +101,6 @@ catkin_package(
 ) 
 
 
-
 find_package(urdf REQUIRED) 
 find_package(Eigen3 REQUIRED) 
 # find_package(orocos_kdl REQUIRED)
@@ -197,6 +196,10 @@ target_link_libraries(ar10_kinematics_lib ${catkin_LIBRARIES}  dq_operations bax
 add_executable(resolved_acc_control src/resolvedAccControl/resolved_acc_control.cpp)
 add_dependencies(resolved_acc_control ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(resolved_acc_control ${catkin_LIBRARIES} dq_operations baxter_dq dq_controller baxter_pose_Control_server_lib ar10_kinematics_lib jacDotSolver)
+
+add_executable(new_traj_resolved_acc_control src/resolvedAccControl/new_traj_resolved_acc_control.cpp)
+add_dependencies(new_traj_resolved_acc_control ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(new_traj_resolved_acc_control ${catkin_LIBRARIES} dq_operations baxter_dq dq_controller baxter_pose_Control_server_lib ar10_kinematics_lib jacDotSolver)
 
 add_executable(disable_gravity_baxSDK src/resolvedAccControl/disable_gravity_baxSDK.cpp)
 add_dependencies(disable_gravity_baxSDK ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})

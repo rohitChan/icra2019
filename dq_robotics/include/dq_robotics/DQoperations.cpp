@@ -464,7 +464,7 @@ MatrixXd DQoperations::transformJacobian(MatrixXd jacobian_8d, Matrix<double,8,1
 Matrix<double,8,1> DQoperations::rotTrans2dq(RowVector4d rot, RowVector4d trans)
 {
 	Matrix<double,8,1> dq;
-	RowVector4d trans_quat = DQoperations::multQuat(rot, trans)/2;
+	RowVector4d trans_quat = DQoperations::multQuat(trans, rot)/2;
 	dq << rot(0), rot(1), rot(2), rot(3), trans_quat(0), trans_quat(1), trans_quat(2), trans_quat(3);
 	return dq;
 }

@@ -1049,6 +1049,21 @@ void BaxterPoseControlServer::initializeBaxterIKService()
 	controllerService = rh.advertiseService("baxterControlService", &BaxterPoseControlServer::baxterControlServerCallback, this);	
 }
 
+bool BaxterPoseControlServer::importJointLimits(std::string arm, RowVectorXd &joint_high_limit, RowVectorXd &joint_low_limit, RowVectorXd &joint_max_safe_limit, RowVectorXd &joint_min_safe_limit)
+{	
+	if(!arm.compare("right"))
+	{
+		for (int i=0; i<7; i++)
+		{
+			joint_min_safe_limit(i) = this->joint_min_safe_limit_right[i];
+			joint_max_safe_limit(i) = this->joint_max_safe_limit_right[i];
+			joint_low_limit(i) = this->joint_low_limit_right[i];
+			joint_high_limit(i)= this->joint_high_limit_right[i];			
+		}
+		return true;		
+	}
+	return false;
+} 
 
 bool BaxterPoseControlServer::importManipulatorState_accControl(std::string arm, Matrix<double,8,1>& pe_init, Matrix<double,8,1>& pe_now, RowVectorXd& q, RowVectorXd& q_vel, MatrixXd& jacobian_6d, MatrixXd& jacobian_6d_dot)
 {

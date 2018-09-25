@@ -119,3 +119,4 @@ joint_names: ['right_s0', 'right_s1', 'right_e0', 'right_e1', 'right_w0', 'right
 root_name: 'torso'
 tip_name_left: 'left_hand'
 tip_name_right: 'right_hand'
+fraction_jointLimit: 0.1

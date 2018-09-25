@@ -129,6 +129,14 @@ bool ManipulatorModDQ::getRobotParams_baxter()
 		return 0;
 	}
 
+	paramName="fraction_jointLimit";
+	if(!ros::param::get(paramName, fraction_jointLimit))
+	{
+		std::cout << "fraction_jointLimit param not found" << std::endl;
+		return 0;
+	}
+
+
 	RowVector3d u_i, p_i;
 	p_baxter.clear();
 	u_baxter.clear();
@@ -234,7 +242,7 @@ bool ManipulatorModDQ::loadModel_baxter()
 	min_safe_baxter.resize(joint_size_baxter);
 	joint_mid_point_baxter.resize(joint_size_baxter);
     
-    fraction_jointLimit=0.05;
+    // fraction_jointLimit=0.1;
 
     rh.param("urdf_xml",urdf_xml,std::string("robot_description"));
     rh.searchParam(urdf_xml,full_urdf_xml);
@@ -272,12 +280,10 @@ bool ManipulatorModDQ::loadModel_baxter()
 			}
 		}	
 	}
-
-	
 	for(int i=0; i <joint_size_baxter; i++)
 	{
-		max_safe_baxter[i]=joint_high_limit_ordered_baxter[i]- (joint_high_limit_ordered_baxter[i]- joint_low_limit_ordered_baxter[i])*fraction_jointLimit;
-		min_safe_baxter[i]=joint_low_limit_ordered_baxter[i] + (joint_high_limit_ordered_baxter[i]- joint_low_limit_ordered_baxter[i])*fraction_jointLimit;
+		max_safe_baxter[i]=joint_high_limit_ordered_baxter[i]- (joint_high_limit_ordered_baxter[i]- joint_low_limit_ordered_baxter[i])*(fraction_jointLimit);
+		min_safe_baxter[i]=joint_low_limit_ordered_baxter[i] + (joint_high_limit_ordered_baxter[i]- joint_low_limit_ordered_baxter[i])*(fraction_jointLimit);
 		joint_mid_point_baxter[i]=(max_safe_baxter[i]+min_safe_baxter[i])/2;
 		std::cout << "joint_" << i << " ::max_safe: " << max_safe_baxter[i] << "::min_safe: " << min_safe_baxter[i] << "::joint_mid_point: " << joint_mid_point_baxter[i] << std::endl;
 	}    

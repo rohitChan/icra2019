@@ -37,7 +37,7 @@ catkin_python_setup()
 
  add_service_files(
    FILES
-   IkHand.srv
+   # IkHand.srv
    BaxterControl.srv
    Grasp.srv
 #   Service1.srv
@@ -57,7 +57,6 @@ generate_messages(
   DEPENDENCIES
   std_msgs
   sensor_msgs
-  kinematics_control_msgs
 )
 
 generate_dynamic_reconfigure_options(
@@ -143,12 +142,12 @@ target_link_libraries(baxter_pose_Control_server_lib ${catkin_LIBRARIES}  dq_ope
 add_executable(baxterPoseControl_server src/baxter_poseControl_server.cpp)
 target_link_libraries(baxterPoseControl_server ${catkin_LIBRARIES} dq_operations baxter_dq dq_controller)
 
-add_executable(manipulationTaskController src/manipulation_task_controller.cpp)
-target_link_libraries(manipulationTaskController ${catkin_LIBRARIES} dq_operations baxter_dq dq_controller)
+# add_executable(manipulationTaskController src/manipulation_task_controller.cpp)
+# target_link_libraries(manipulationTaskController ${catkin_LIBRARIES} dq_operations baxter_dq dq_controller)
 
-add_library(ar10_kinematics_lib src/ar10_kinematics.cpp)
-add_dependencies(ar10_kinematics_lib ${control_msgs_EXPORTED_TARGETS} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-target_link_libraries(ar10_kinematics_lib ${catkin_LIBRARIES}  dq_operations baxter_dq dq_controller)
+# add_library(ar10_kinematics_lib src/ar10_kinematics.cpp)
+# add_dependencies(ar10_kinematics_lib ${control_msgs_EXPORTED_TARGETS} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+# target_link_libraries(ar10_kinematics_lib ${catkin_LIBRARIES}  dq_operations baxter_dq dq_controller)
 
 # add_executable(ar10Kinematics src/ar10_kinematics.cpp)
 # # add_dependencies(ar10Kinematics ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
@@ -195,11 +194,11 @@ target_link_libraries(ar10_kinematics_lib ${catkin_LIBRARIES}  dq_operations bax
 
 add_executable(resolved_acc_control src/resolvedAccControl/resolved_acc_control.cpp)
 add_dependencies(resolved_acc_control ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-target_link_libraries(resolved_acc_control ${catkin_LIBRARIES} dq_operations baxter_dq dq_controller baxter_pose_Control_server_lib ar10_kinematics_lib jacDotSolver)
+target_link_libraries(resolved_acc_control ${catkin_LIBRARIES} dq_operations baxter_dq dq_controller baxter_pose_Control_server_lib jacDotSolver)
 
 add_executable(new_traj_resolved_acc_control src/resolvedAccControl/new_traj_resolved_acc_control.cpp)
 add_dependencies(new_traj_resolved_acc_control ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-target_link_libraries(new_traj_resolved_acc_control ${catkin_LIBRARIES} dq_operations baxter_dq dq_controller baxter_pose_Control_server_lib ar10_kinematics_lib jacDotSolver)
+target_link_libraries(new_traj_resolved_acc_control ${catkin_LIBRARIES} dq_operations baxter_dq dq_controller baxter_pose_Control_server_lib jacDotSolver)
 
 add_executable(disable_gravity_baxSDK src/resolvedAccControl/disable_gravity_baxSDK.cpp)
 add_dependencies(disable_gravity_baxSDK ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})

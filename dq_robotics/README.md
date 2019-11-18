@@ -1,4 +1,4 @@
-# icra2019
+# IFAC WC 2020
 Add the package dq_robots in your catkin workspace and catkin_make your workspace. The package requires KDL and Eigen libraries and works with ROS INDIGO. The package was designed to work with Baxter robot in simulation as well as with the real robot.
 
 Steps to repeat the experiments :
